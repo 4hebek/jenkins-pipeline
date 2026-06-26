@@ -1,11 +1,13 @@
-# Use Python 3.6 or later as a base image
+FROM python:3.9-slim
 
-# Copy contents into image
- 
-# Install pip dependencies from requirements
+WORKDIR /app
 
-# Set YOUR_NAME environment variable
+COPY . .
 
-# Expose the correct port
+RUN pip install -r requirements.txt
 
-# Create an entrypoint
+ENV YOUR_NAME="Karolina"
+
+EXPOSE 5500
+
+ENTRYPOINT ["python", "app.py"]
