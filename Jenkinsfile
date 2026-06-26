@@ -2,26 +2,42 @@ pipeline {
     agent any
 
     stages {
-        stage('Build') {
+        stage('Cleanup') {
             steps {
-                sh 'echo "Build stage running"'
-                sh 'ls -la'
-                sh 'touch build.txt'
+                sh '''
+                docker rm -f task1-app nginx-proxy || true
+                docker network rm task1-network || true
+                '''
             }
         }
 
-        stage('Test') {
+        stage('Setup Network') {
             steps {
-                sh 'echo "Test stage running"'
-                sh 'pwd'
+                sh 'docker network create task1-network'
             }
         }
 
-        stage('Deploy') {
+        stage('Build Images') {
             steps {
-                sh 'echo "Deploy stage running"'
-                sh 'mv build.txt deployed.txt'
-                sh 'ls -la'
+                sh 'docker build -t task1-app .'
+                sh 'docker build -f Dockerfile.nginx -t task1-nginx .'
+            }
+        }
+
+        stage('Run Containers') {
+            steps {
+                sh '''
+                docker run -d --name task1-app --network task1-network -p 5500:5500 task1-app
+                docker run -d --name nginx-proxy --network task1-network -p 80:80 task1-nginx
+                '''
+            }
+        }
+
+        stage('Verify') {
+            steps {
+                sh 'docker ps'
+                sh 'curl localhost || true'
+                sh 'curl localhost:5500 || true'
             }
         }
     }
